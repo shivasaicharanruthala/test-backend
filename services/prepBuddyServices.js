@@ -35,7 +35,7 @@ export const getById = async (user) => {
  */
 export const sendUserVerficationEmail = async (userformdata, res) => {
     const userStatus = await getByEmail(userformdata);
-    const currentURL = 'http://localhost:8080/';
+    const currentURL = 'https://prep-buddy-api.onrender.com/';
     const uniqueString = userStatus.id;
 
     // Email format which will be sent to user for verification purpose
