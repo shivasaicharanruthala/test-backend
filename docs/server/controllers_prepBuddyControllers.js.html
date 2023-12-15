@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: controllers/prepBuddyControllers.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: controllers/prepBuddyControllers.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>import * as prepBuddyService from '../services/prepBuddyServices.js';
+import { setError, setResponse } from '../utils/common.js';
+import generateToken from '../utils/generateToken.js';
+import path from 'path';
+/**
+ * Handles user registration by checking if the user with the provided email already exists,
+ * saving the user data to the database, and sending a verification email.
+ *
+ * @async
+ * @function
+ * @param {Object} req - Express request object containing user registration details in the body.
+ * @param {Object} res - Express response object.
+ * @returns {Promise&lt;void>} - A Promise representing the asynchronous operation.
+ */
+export const userRegistration = async (req, res) => {
+    try {
+        // returns the userdata from database using email
+        const validUser = await prepBuddyService.getByEmail(req.body);
+        if (validUser) {
+            throw { code: 409, message: `User with email: ${req.body.email} already exists` };
+        }
+        const saveUser = await prepBuddyService.post(req.body);
+        //Sends an email to user for verification purpose
+        prepBuddyService.sendUserVerficationEmail(req.body , res); 
+        setResponse(saveUser, res, 201)
+    } catch (err) {
+        res.status(err.code ? err.code : 500).send({ message: err.message ? err.message : "Something went wrong in SignUp!" })
+    }
+}
+
+
+/**
+ * Authenticates a user by checking the provided email and password against the database.
+ * If the user is verified, returns user information and a token for authorization.
+ *
+ * @async
+ * @function
+ * @param {Object} req - Express request object containing user login credentials in the body.
+ * @param {Object} res - Express response object.
+ * @returns {Promise&lt;void>} - A Promise representing the asynchronous operation.
+ */
+export const authenticateUser = async (req, res) => {
+    let statusCode;
+    try {
+        // returns the userdata from database using email
+        const validUser = await prepBuddyService.getByEmail(req.body);
+        // Validates the user with thier respective credentials
+        if (validUser &amp;&amp; await prepBuddyService.passwordMatch(req.body, validUser)) {
+            //If the email is not verified user will not be able to login
+            if(validUser.verified)
+            {
+                res.json({
+                    id: validUser.id,
+                    firstName: validUser.firstName,
+                    lastName: validUser.lastName,
+                    email: validUser.email,
+                    token: generateToken(validUser.id)
+                })
+                res.status(201);
+            }
+            else
+            {
+                //console.log(`${validUser.email} is not verified`);
+                statusCode = 401;
+                throw { code: 401, message: 'Email is not verified' };
+            }
+            
+        }
+        else {
+            statusCode = 401;
+            throw { code: 401, message: 'Invalid Email or Password' };
+        }
+    } catch (err) {
+        //console.log("error: ", err);
+        res.status(err.code ? err.code : 500).send({ message: err.message ? err.message : "Something went wrong in Login!" })
+    }
+}
+
+/**
+ * Handles the email verification of a user based on the provided user ID.
+ *
+ * @async
+ * @function
+ * @param {Object} req - Express request object containing the user ID in the parameters.
+ * @param {Object} res - Express response object.
+ * @returns {Promise&lt;void>} - A Promise representing the asynchronous operation.
+ */
+export const validateUser = async (req, res) => {
+    let {userId} = req.params;
+    try{
+        // User email verification
+        await prepBuddyService.userVerfication(userId , req, res);
+    }
+    catch(err)
+    {
+        //console.log(err);
+    }
+}
+
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Global</h3><ul><li><a href="global.html#AcceptMockInterviewRequest">AcceptMockInterviewRequest</a></li><li><a href="global.html#CreateCalendarEvent">CreateCalendarEvent</a></li><li><a href="global.html#DeleteCalenderEvent">DeleteCalenderEvent</a></li><li><a href="global.html#DeleteMockInterview">DeleteMockInterview</a></li><li><a href="global.html#GetMockInterviewByID">GetMockInterviewByID</a></li><li><a href="global.html#GetMockInterviewsAggregate">GetMockInterviewsAggregate</a></li><li><a href="global.html#GetMockInterviewsByFilter">GetMockInterviewsByFilter</a></li><li><a href="global.html#GetMockInterviewsTaken">GetMockInterviewsTaken</a></li><li><a href="global.html#GetUserEmailsById">GetUserEmailsById</a></li><li><a href="global.html#GetUserEvents">GetUserEvents</a></li><li><a href="global.html#ModifyAvailableSlot">ModifyAvailableSlot</a></li><li><a href="global.html#ModifyFeedback">ModifyFeedback</a></li><li><a href="global.html#ModifyMockInterview">ModifyMockInterview</a></li><li><a href="global.html#ModifySpecificFields">ModifySpecificFields</a></li><li><a href="global.html#RequestMockInterview">RequestMockInterview</a></li><li><a href="global.html#Schema">Schema</a></li><li><a href="global.html#UpdateCalendarEvent">UpdateCalendarEvent</a></li><li><a href="global.html#authenticateUser">authenticateUser</a></li><li><a href="global.html#bufferToStream">bufferToStream</a></li><li><a href="global.html#connectMongo">connectMongo</a></li><li><a href="global.html#createEventObj">createEventObj</a></li><li><a href="global.html#createInterviewExperience">createInterviewExperience</a></li><li><a href="global.html#createInterviewExperienceComment">createInterviewExperienceComment</a></li><li><a href="global.html#deleteInterviewExperience">deleteInterviewExperience</a></li><li><a href="global.html#deleteInterviewExperienceComment">deleteInterviewExperienceComment</a></li><li><a href="global.html#formatTimeStamp">formatTimeStamp</a></li><li><a href="global.html#generateToken">generateToken</a></li><li><a href="global.html#get">get</a></li><li><a href="global.html#getAllInterviewExperience">getAllInterviewExperience</a></li><li><a href="global.html#getAllInterviewExperienceComment">getAllInterviewExperienceComment</a></li><li><a href="global.html#getByEmail">getByEmail</a></li><li><a href="global.html#getById">getById</a></li><li><a href="global.html#getInterviewExperience">getInterviewExperience</a></li><li><a href="global.html#index">index</a></li><li><a href="global.html#passwordMatch">passwordMatch</a></li><li><a href="global.html#post">post</a></li><li><a href="global.html#remove">remove</a></li><li><a href="global.html#save">save</a></li><li><a href="global.html#schema">schema</a></li><li><a href="global.html#search">search</a></li><li><a href="global.html#sendUserVerficationEmail">sendUserVerficationEmail</a></li><li><a href="global.html#setError">setError</a></li><li><a href="global.html#setErrorResponse">setErrorResponse</a></li><li><a href="global.html#setResponse">setResponse</a></li><li><a href="global.html#setSuccessResponse">setSuccessResponse</a></li><li><a href="global.html#transporter">transporter</a></li><li><a href="global.html#update">update</a></li><li><a href="global.html#updateInterviewExperience">updateInterviewExperience</a></li><li><a href="global.html#updateInterviewExperienceComment">updateInterviewExperienceComment</a></li><li><a href="global.html#uploadModifiedFileToGoogleDrive">uploadModifiedFileToGoogleDrive</a></li><li><a href="global.html#uploadToGoogleDrive">uploadToGoogleDrive</a></li><li><a href="global.html#upvotesInterviewExperience">upvotesInterviewExperience</a></li><li><a href="global.html#userRegistration">userRegistration</a></li><li><a href="global.html#userVerfication">userVerfication</a></li><li><a href="global.html#validateId">validateId</a></li><li><a href="global.html#validatePayload">validatePayload</a></li><li><a href="global.html#validateUser">validateUser</a></li><li><a href="global.html#validationSchema">validationSchema</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.2</a> on Fri Dec 01 2023 20:22:54 GMT-0500 (Eastern Standard Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

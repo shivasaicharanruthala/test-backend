@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: models/prepBuddy.userValidation.models.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: models/prepBuddy.userValidation.models.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>import mongoose, { Schema } from 'mongoose';
+
+/**
+ * Mongoose schema for validation documents.
+ *
+ * @typedef {Object} ValidationSchema
+ * @property {String} userId - User identifier associated with the validation entry.
+ * @property {String} email - Email associated with the validation entry.
+ * @property {String} uniqueString - Unique string generated for validation purposes.
+ * @property {Date} createdAt - Timestamp indicating when the validation entry was created.
+ * @property {Date} expiresAt - Timestamp indicating the expiration time of the validation entry.
+ */
+
+/**
+ * Mongoose schema definition for validation documents.
+ *
+ * @type {mongoose.Schema}
+ */
+const validationSchema = new Schema({
+    userId : String,
+    email : String,
+    uniqueString : String,
+    createdAt : Date,
+    expiresAt : Date
+});
+
+const userValidation = mongoose.model('userValidation' , validationSchema);
+export default userValidation;</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Global</h3><ul><li><a href="global.html#AcceptMockInterviewRequest">AcceptMockInterviewRequest</a></li><li><a href="global.html#CreateCalendarEvent">CreateCalendarEvent</a></li><li><a href="global.html#DeleteCalenderEvent">DeleteCalenderEvent</a></li><li><a href="global.html#DeleteMockInterview">DeleteMockInterview</a></li><li><a href="global.html#GetMockInterviewByID">GetMockInterviewByID</a></li><li><a href="global.html#GetMockInterviewsAggregate">GetMockInterviewsAggregate</a></li><li><a href="global.html#GetMockInterviewsByFilter">GetMockInterviewsByFilter</a></li><li><a href="global.html#GetMockInterviewsTaken">GetMockInterviewsTaken</a></li><li><a href="global.html#GetUserEmailsById">GetUserEmailsById</a></li><li><a href="global.html#GetUserEvents">GetUserEvents</a></li><li><a href="global.html#ModifyAvailableSlot">ModifyAvailableSlot</a></li><li><a href="global.html#ModifyFeedback">ModifyFeedback</a></li><li><a href="global.html#ModifyMockInterview">ModifyMockInterview</a></li><li><a href="global.html#ModifySpecificFields">ModifySpecificFields</a></li><li><a href="global.html#RequestMockInterview">RequestMockInterview</a></li><li><a href="global.html#Schema">Schema</a></li><li><a href="global.html#UpdateCalendarEvent">UpdateCalendarEvent</a></li><li><a href="global.html#authenticateUser">authenticateUser</a></li><li><a href="global.html#bufferToStream">bufferToStream</a></li><li><a href="global.html#connectMongo">connectMongo</a></li><li><a href="global.html#createEventObj">createEventObj</a></li><li><a href="global.html#createInterviewExperience">createInterviewExperience</a></li><li><a href="global.html#createInterviewExperienceComment">createInterviewExperienceComment</a></li><li><a href="global.html#deleteInterviewExperience">deleteInterviewExperience</a></li><li><a href="global.html#deleteInterviewExperienceComment">deleteInterviewExperienceComment</a></li><li><a href="global.html#formatTimeStamp">formatTimeStamp</a></li><li><a href="global.html#generateToken">generateToken</a></li><li><a href="global.html#get">get</a></li><li><a href="global.html#getAllInterviewExperience">getAllInterviewExperience</a></li><li><a href="global.html#getAllInterviewExperienceComment">getAllInterviewExperienceComment</a></li><li><a href="global.html#getByEmail">getByEmail</a></li><li><a href="global.html#getById">getById</a></li><li><a href="global.html#getInterviewExperience">getInterviewExperience</a></li><li><a href="global.html#index">index</a></li><li><a href="global.html#passwordMatch">passwordMatch</a></li><li><a href="global.html#post">post</a></li><li><a href="global.html#remove">remove</a></li><li><a href="global.html#save">save</a></li><li><a href="global.html#schema">schema</a></li><li><a href="global.html#search">search</a></li><li><a href="global.html#sendUserVerficationEmail">sendUserVerficationEmail</a></li><li><a href="global.html#setError">setError</a></li><li><a href="global.html#setErrorResponse">setErrorResponse</a></li><li><a href="global.html#setResponse">setResponse</a></li><li><a href="global.html#setSuccessResponse">setSuccessResponse</a></li><li><a href="global.html#transporter">transporter</a></li><li><a href="global.html#update">update</a></li><li><a href="global.html#updateInterviewExperience">updateInterviewExperience</a></li><li><a href="global.html#updateInterviewExperienceComment">updateInterviewExperienceComment</a></li><li><a href="global.html#uploadModifiedFileToGoogleDrive">uploadModifiedFileToGoogleDrive</a></li><li><a href="global.html#uploadToGoogleDrive">uploadToGoogleDrive</a></li><li><a href="global.html#upvotesInterviewExperience">upvotesInterviewExperience</a></li><li><a href="global.html#userRegistration">userRegistration</a></li><li><a href="global.html#userVerfication">userVerfication</a></li><li><a href="global.html#validateId">validateId</a></li><li><a href="global.html#validatePayload">validatePayload</a></li><li><a href="global.html#validateUser">validateUser</a></li><li><a href="global.html#validationSchema">validationSchema</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.2</a> on Fri Dec 01 2023 20:22:54 GMT-0500 (Eastern Standard Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

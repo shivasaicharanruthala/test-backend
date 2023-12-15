@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: services/prepBuddyServices.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: services/prepBuddyServices.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>import { v4 as uuid4 } from 'uuid';
+import transporter from './userValidationServices.js';
+import userModel from '../models/prepBuddy.users.models.js';
+import PrepBuddyUsersModels from "../models/prepBuddy.users.models.js";
+import userValidation from '../models/prepBuddy.userValidation.models.js';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+/**
+ * Retrieves user data from the database by searching with email.
+ *
+ * @param {object} userformData - User data object containing the email for searching.
+ * @returns {Promise&lt;object|null>} - A promise that resolves to the user data or null if not found.
+ */
+export const getByEmail = async (userformData) => {
+    return await userModel.findOne({ "email": userformData.email }).exec();
+}
+
+/**
+ * Retrieves user data from the database by searching with ID.
+ *
+ * @param {object} user - User object containing the user ID for searching.
+ * @returns {Promise&lt;object|null>} - A promise that resolves to the user data or null if not found.
+ */
+export const getById = async (user) => {
+    return await userModel.findOne({ id: user.id });
+}
+
+/**
+ * Sends a verification email to the user's email address.
+ *
+ * @param {object} userformdata - User data object containing information for sending the verification email.
+ * @param {object} res - Express response object for handling the response.
+ * @returns {void}
+ */
+export const sendUserVerficationEmail = async (userformdata, res) => {
+    const userStatus = await getByEmail(userformdata);
+    const currentURL = 'http://localhost:8080/';
+    const uniqueString = userStatus.id;
+
+    // Email format which will be sent to user for verification purpose
+    const mailOptions = {
+        from: 'testemail9121@gmail.com',
+        to: userStatus.email,
+        subject: 'PrepBuddy Please Verify your email',
+        html: `&lt;p>Hi ${userStatus.firstName},&lt;p/>&lt;br>&lt;p>Please verify your email address to complete the signup and login into your account.&lt;p/>
+            &lt;p>&lt;b>This link is valid only for 10 mins &lt;b/>.&lt;/p>
+            &lt;p>Press click&lt;a href=${currentURL + "user/" + userStatus.id + "/verify"}> here &lt;a/> to proceed&lt;p/>`,
+
+    };
+
+    // User is created in userValidation database with an expiry time of 10 mins
+    const newVerification = new userValidation({
+        userId: uniqueString,
+        email: userStatus.email,
+        uniqueString: uniqueString,
+        createdAt: Date.now(),
+        expiresAt: Date.now() + 600000
+    })
+    //New User created in verification table
+    newVerification.save()
+        .then(() => {
+            transporter.sendMail(mailOptions)
+                .then(() => {
+                })
+                .catch((error) => {
+                    ///console.log("Error in email sending ",error);
+                })
+        })
+        .catch((error) => {
+            //console.log("Error in savig into database",error);
+        })
+}
+
+/**
+ * Compares the password provided in the user form data with the hashed password in the user model.
+ *
+ * @param {object} userformData - User data object containing the password to be checked.
+ * @param {object} validUser - User model object with the hashed password to compare.
+ * @returns {Promise&lt;boolean>} - A promise that resolves to true if the passwords match, false otherwise.
+ */
+export const passwordMatch = async (userformData, validUser) => {
+    return await validUser.matchPassword(userformData.password);
+}
+
+/**
+ * Creates a new user after a successful signup.
+ *
+ * @param {object} userformData - User data object containing information for creating a new user.
+ * @returns {Promise&lt;object>} - A promise that resolves to the newly created user object.
+ */
+export const post = async (userformData) => {
+    const user = {
+        id: uuid4(),
+        firstName: userformData.firstName,
+        lastName: userformData.lastName,
+        email: userformData.email,
+        password: userformData.password,
+        verified: false
+    }
+    const newUser = new userModel(user);
+    return newUser.save();
+}
+
+/**
+ * Verifies the user's email after clicking the link provided in the email before it expires.
+ *
+ * @param {string} userId - The ID of the user to be verified.
+ * @param {object} req - Express request object for handling the request.
+ * @param {object} res - Express response object for handling the response.
+ * @returns {void}
+ */
+export const userVerfication = async (userId, req, res) => {
+    userValidation.findOne({ "userId": userId }).then((userValidationRecord) => {
+        if (userValidationRecord) {
+            //Record fetched from uservalidation table
+            const expiresAt = userValidationRecord.expiresAt;
+            if (expiresAt &lt; Date.now()) {
+                //Record is expired
+                userValidation.deleteOne({ "userId": userId }).then(result => {
+                    userModel.deleteOne({ "id": userId }).then(() => {
+                        let message = "Link has expired Please SignUp again";
+                        res.redirect(`/user/verified/error=true&amp;message=${message}`);
+                    }).catch(() => {
+                        let message = "Error occured while while deleting the existing user Model record";
+                        res.redirect(`/user/verified/error=true&amp;message=${message}`);
+                    })
+                })
+                    .catch((err) => {
+                        let message = "Error occured while deleting the existing user validation record";
+                        res.redirect(`/user/verified/error=true&amp;message=${message}`);
+                    })
+            }
+            else {
+                //Valid record Exists
+                userModel.updateOne({ id: userId }, { verified: true })
+                    .then(() => {
+                        userValidation.deleteOne({ "userId": userId })
+                            .then(() => {
+                                //Send the verfied html file as status
+                                res.sendFile(`${dirname(fileURLToPath(import.meta.url))}/verified.html`);
+                            })
+                            .catch((err) => {
+                                let message = "Error occured while finalizing successful record";
+                                res.redirect(`/user/verified/error=true&amp;message=${message}`);
+                            })
+                    })
+                    .catch((err) => {
+                        let message = "Error occured while updating user verification record";
+                        res.redirect(`/user/verified/error=true&amp;message=${message}`);
+                    })
+            }
+        }
+        else {
+            let message = "User record doesn't exist or it has been verified already. Please signin or signup"
+            res.redirect(`/user/verified/error=true&amp;message=${message}`);
+        }
+    }).catch((err) => {
+        let message = "Error occured while checking existing valid record";
+        res.redirect(`/user/verified/error=true&amp;message=${message}`);
+    })
+}
+
+/**
+ * Gets user emails by searching with user IDs.
+ *
+ * @param {string} userId - The ID of the user for whom emails are fetched.
+ * @param {string} interviewerId - The ID of the interviewer for whom emails are fetched.
+ * @returns {Promise&lt;Array>} - A promise that resolves to an array of user emails.
+ */
+export const GetUserEmailsById = async (userId, interviewerId) => {
+    return await PrepBuddyUsersModels.find( { $or: [{id: userId}, {id: interviewerId}] } ).select('email').exec()
+}</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Global</h3><ul><li><a href="global.html#AcceptMockInterviewRequest">AcceptMockInterviewRequest</a></li><li><a href="global.html#CreateCalendarEvent">CreateCalendarEvent</a></li><li><a href="global.html#DeleteCalenderEvent">DeleteCalenderEvent</a></li><li><a href="global.html#DeleteMockInterview">DeleteMockInterview</a></li><li><a href="global.html#GetMockInterviewByID">GetMockInterviewByID</a></li><li><a href="global.html#GetMockInterviewsAggregate">GetMockInterviewsAggregate</a></li><li><a href="global.html#GetMockInterviewsByFilter">GetMockInterviewsByFilter</a></li><li><a href="global.html#GetMockInterviewsTaken">GetMockInterviewsTaken</a></li><li><a href="global.html#GetUserEmailsById">GetUserEmailsById</a></li><li><a href="global.html#GetUserEvents">GetUserEvents</a></li><li><a href="global.html#ModifyAvailableSlot">ModifyAvailableSlot</a></li><li><a href="global.html#ModifyFeedback">ModifyFeedback</a></li><li><a href="global.html#ModifyMockInterview">ModifyMockInterview</a></li><li><a href="global.html#ModifySpecificFields">ModifySpecificFields</a></li><li><a href="global.html#RequestMockInterview">RequestMockInterview</a></li><li><a href="global.html#Schema">Schema</a></li><li><a href="global.html#UpdateCalendarEvent">UpdateCalendarEvent</a></li><li><a href="global.html#authenticateUser">authenticateUser</a></li><li><a href="global.html#bufferToStream">bufferToStream</a></li><li><a href="global.html#connectMongo">connectMongo</a></li><li><a href="global.html#createEventObj">createEventObj</a></li><li><a href="global.html#createInterviewExperience">createInterviewExperience</a></li><li><a href="global.html#createInterviewExperienceComment">createInterviewExperienceComment</a></li><li><a href="global.html#deleteInterviewExperience">deleteInterviewExperience</a></li><li><a href="global.html#deleteInterviewExperienceComment">deleteInterviewExperienceComment</a></li><li><a href="global.html#formatTimeStamp">formatTimeStamp</a></li><li><a href="global.html#generateToken">generateToken</a></li><li><a href="global.html#get">get</a></li><li><a href="global.html#getAllInterviewExperience">getAllInterviewExperience</a></li><li><a href="global.html#getAllInterviewExperienceComment">getAllInterviewExperienceComment</a></li><li><a href="global.html#getByEmail">getByEmail</a></li><li><a href="global.html#getById">getById</a></li><li><a href="global.html#getInterviewExperience">getInterviewExperience</a></li><li><a href="global.html#index">index</a></li><li><a href="global.html#passwordMatch">passwordMatch</a></li><li><a href="global.html#post">post</a></li><li><a href="global.html#remove">remove</a></li><li><a href="global.html#save">save</a></li><li><a href="global.html#schema">schema</a></li><li><a href="global.html#search">search</a></li><li><a href="global.html#sendUserVerficationEmail">sendUserVerficationEmail</a></li><li><a href="global.html#setError">setError</a></li><li><a href="global.html#setErrorResponse">setErrorResponse</a></li><li><a href="global.html#setResponse">setResponse</a></li><li><a href="global.html#setSuccessResponse">setSuccessResponse</a></li><li><a href="global.html#transporter">transporter</a></li><li><a href="global.html#update">update</a></li><li><a href="global.html#updateInterviewExperience">updateInterviewExperience</a></li><li><a href="global.html#updateInterviewExperienceComment">updateInterviewExperienceComment</a></li><li><a href="global.html#uploadModifiedFileToGoogleDrive">uploadModifiedFileToGoogleDrive</a></li><li><a href="global.html#uploadToGoogleDrive">uploadToGoogleDrive</a></li><li><a href="global.html#upvotesInterviewExperience">upvotesInterviewExperience</a></li><li><a href="global.html#userRegistration">userRegistration</a></li><li><a href="global.html#userVerfication">userVerfication</a></li><li><a href="global.html#validateId">validateId</a></li><li><a href="global.html#validatePayload">validatePayload</a></li><li><a href="global.html#validateUser">validateUser</a></li><li><a href="global.html#validationSchema">validationSchema</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.2</a> on Fri Dec 01 2023 20:22:54 GMT-0500 (Eastern Standard Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: controllers/job-controller.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: controllers/job-controller.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>import * as contactsService from '../services/todo-service.js'
+
+/**
+ * Sets an error response with status code and JSON body for a given Express response object.
+ *
+ * @function
+ * @param {Object} error - Error object to be sent in the response body.
+ * @param {Object} response - Express response object.
+ * @param {number} statusCode - HTTP status code to be set in the response.
+ * @returns {void}
+ */
+const setErrorResponse=(error, response, statusCode) =>{ //this is for success response
+    console.log(statusCode)
+    response.status(statusCode);
+    response.json(error);
+}
+
+/**
+ * Sets a success response with status code and JSON body for a given Express response object.
+ *
+ * @function
+ * @param {Object} obj - Object to be sent in the response body.
+ * @param {Object} response - Express response object.
+ * @param {number} statusCode - HTTP status code to be set in the response.
+ * @returns {void}
+ */
+const setSuccessResponse=(obj, response, statusCode) =>{ //this is for success response
+    response.status(statusCode);
+    response.json(obj)
+}
+
+/**
+ * Handles the creation of a new contact record.
+ *
+ * @async
+ * @function
+ * @param {Object} request - Express request object containing the payload in the body.
+ * @param {Object} response - Express response object.
+ * @returns {Promise&lt;void>} - A Promise representing the asynchronous operation.
+ */
+export const post=async(request, response) => {
+    let statusCode;
+    try{
+    const payload=request.body;
+    console.log("the payload", request)
+    const contact= await contactsService.save(payload);
+    statusCode=201;
+    setSuccessResponse(contact,response, statusCode);
+    }
+    catch(error){
+        setErrorResponse(error,response, statusCode? statusCode: 400);
+    }
+}
+
+/**
+ * Handles the retrieval of contact records based on query parameters.
+ *
+ * @async
+ * @function
+ * @param {Object} request - Express request object containing query parameters.
+ * @param {Object} response - Express response object.
+ * @returns {Promise&lt;void>} - A Promise representing the asynchronous operation.
+ */
+export const index= async(request, response) => {
+    //let statusCode;
+    try{
+        const jobTitle=request.query.jobTitle;
+        const company=request.query.company;
+        const jobLink = request.query.jobLink;
+        const jobType = request.query.jobType;
+        const query={};
+        if(jobTitle){
+            query.jobTitle=jobTitle;
+          
+        }
+        if(company){
+            query.company=company;
+        }
+        if(jobLink){
+            query.jobLink = jobLink;
+        }
+        if(jobType){
+            query.jobType = jobType;
+        }
+        const contacts=await contactsService.search(query);
+        console.log("Log in details ------", contacts)
+        setSuccessResponse(contacts,response, 200);
+    }
+    catch(error){
+        setErrorResponse(error,response, 400);
+    }
+}
+
+/**
+ * Handles the retrieval of a contact record by ID.
+ *
+ * @async
+ * @function
+ * @param {Object} request - Express request object containing parameters.
+ * @param {Object} response - Express response object.
+ * @returns {Promise&lt;void>} - A Promise representing the asynchronous operation.
+ */
+export const get = async(request,response) =>{
+    let statusCode;
+
+    try{
+        const id=request.params.id; //This id is from the URL
+        console.log("id: ", id)
+        const contact=await contactsService.get(id);
+        
+        if (!contact) {
+            statusCode = 404;
+            throw {"error": `task with id: ${id} does not exist.`};
+        }
+        statusCode=200;
+        setSuccessResponse(contact,response, statusCode);
+    }
+    catch(error){
+        setErrorResponse(error,response, statusCode? statusCode: 400);
+    }
+}
+
+/**
+ * Handles the update of a contact record by ID.
+ *
+ * @async
+ * @function
+ * @param {Object} request - Express request object containing parameters and body.
+ * @param {Object} response - Express response object.
+ * @returns {Promise&lt;void>} - A Promise representing the asynchronous operation.
+ */
+export const update = async(request,response) =>{
+    let statusCode;
+    try{
+        const id=request.params.id;
+        const updated={...request.body}; 
+        console.log("the updated",request)//cloning it
+        updated.id=id;
+        const contact=await contactsService.update(updated);
+        setSuccessResponse(contact, response,200)
+    }
+    catch(error){
+        setErrorResponse(error,response,statusCode? statusCode: 400);  
+    }
+}
+
+/**
+ * Handles the removal of a contact record by ID.
+ *
+ * @async
+ * @function
+ * @param {Object} request - Express request object containing parameters.
+ * @param {Object} response - Express response object.
+ * @returns {Promise&lt;void>} - A Promise representing the asynchronous operation.
+ */
+export const remove = async(request,response) =>{
+    try{
+        const id=request.params.id; //params gives the parameters
+        const contact=await contactsService.remove(id);
+        setSuccessResponse({message: `Succesfully Removed ${id}`},response,204); //passing the message and response object
+    }
+    catch(error){
+        setErrorResponse(error,response, 400);
+    }
+}
+
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Global</h3><ul><li><a href="global.html#AcceptMockInterviewRequest">AcceptMockInterviewRequest</a></li><li><a href="global.html#CreateCalendarEvent">CreateCalendarEvent</a></li><li><a href="global.html#DeleteCalenderEvent">DeleteCalenderEvent</a></li><li><a href="global.html#DeleteMockInterview">DeleteMockInterview</a></li><li><a href="global.html#GetMockInterviewByID">GetMockInterviewByID</a></li><li><a href="global.html#GetMockInterviewsAggregate">GetMockInterviewsAggregate</a></li><li><a href="global.html#GetMockInterviewsByFilter">GetMockInterviewsByFilter</a></li><li><a href="global.html#GetMockInterviewsTaken">GetMockInterviewsTaken</a></li><li><a href="global.html#GetUserEmailsById">GetUserEmailsById</a></li><li><a href="global.html#GetUserEvents">GetUserEvents</a></li><li><a href="global.html#ModifyAvailableSlot">ModifyAvailableSlot</a></li><li><a href="global.html#ModifyFeedback">ModifyFeedback</a></li><li><a href="global.html#ModifyMockInterview">ModifyMockInterview</a></li><li><a href="global.html#ModifySpecificFields">ModifySpecificFields</a></li><li><a href="global.html#RequestMockInterview">RequestMockInterview</a></li><li><a href="global.html#Schema">Schema</a></li><li><a href="global.html#UpdateCalendarEvent">UpdateCalendarEvent</a></li><li><a href="global.html#authenticateUser">authenticateUser</a></li><li><a href="global.html#bufferToStream">bufferToStream</a></li><li><a href="global.html#connectMongo">connectMongo</a></li><li><a href="global.html#createEventObj">createEventObj</a></li><li><a href="global.html#createInterviewExperience">createInterviewExperience</a></li><li><a href="global.html#createInterviewExperienceComment">createInterviewExperienceComment</a></li><li><a href="global.html#deleteInterviewExperience">deleteInterviewExperience</a></li><li><a href="global.html#deleteInterviewExperienceComment">deleteInterviewExperienceComment</a></li><li><a href="global.html#formatTimeStamp">formatTimeStamp</a></li><li><a href="global.html#generateToken">generateToken</a></li><li><a href="global.html#get">get</a></li><li><a href="global.html#getAllInterviewExperience">getAllInterviewExperience</a></li><li><a href="global.html#getAllInterviewExperienceComment">getAllInterviewExperienceComment</a></li><li><a href="global.html#getByEmail">getByEmail</a></li><li><a href="global.html#getById">getById</a></li><li><a href="global.html#getInterviewExperience">getInterviewExperience</a></li><li><a href="global.html#index">index</a></li><li><a href="global.html#passwordMatch">passwordMatch</a></li><li><a href="global.html#post">post</a></li><li><a href="global.html#remove">remove</a></li><li><a href="global.html#save">save</a></li><li><a href="global.html#schema">schema</a></li><li><a href="global.html#search">search</a></li><li><a href="global.html#sendUserVerficationEmail">sendUserVerficationEmail</a></li><li><a href="global.html#setError">setError</a></li><li><a href="global.html#setErrorResponse">setErrorResponse</a></li><li><a href="global.html#setResponse">setResponse</a></li><li><a href="global.html#setSuccessResponse">setSuccessResponse</a></li><li><a href="global.html#transporter">transporter</a></li><li><a href="global.html#update">update</a></li><li><a href="global.html#updateInterviewExperience">updateInterviewExperience</a></li><li><a href="global.html#updateInterviewExperienceComment">updateInterviewExperienceComment</a></li><li><a href="global.html#uploadModifiedFileToGoogleDrive">uploadModifiedFileToGoogleDrive</a></li><li><a href="global.html#uploadToGoogleDrive">uploadToGoogleDrive</a></li><li><a href="global.html#upvotesInterviewExperience">upvotesInterviewExperience</a></li><li><a href="global.html#userRegistration">userRegistration</a></li><li><a href="global.html#userVerfication">userVerfication</a></li><li><a href="global.html#validateId">validateId</a></li><li><a href="global.html#validatePayload">validatePayload</a></li><li><a href="global.html#validateUser">validateUser</a></li><li><a href="global.html#validationSchema">validationSchema</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.2</a> on Fri Dec 01 2023 20:22:54 GMT-0500 (Eastern Standard Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

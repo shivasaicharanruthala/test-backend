@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: controllers/interview-experience-controller.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: controllers/interview-experience-controller.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>import  {v4 as uuidv4} from 'uuid';
+
+// imports service layer functions
+import * as interviewExperienceService from "../services/interview-experience-services.js";
+
+/**
+ * Retrieves all interview experiences.
+ *
+ * @async
+ * @function
+ * @param {Object} req - Express request object.
+ * @param {Object} res - Express response object.
+ * @returns {Promise&lt;void>} - A Promise representing the asynchronous operation.
+ * @throws {Object} - Error object if there's an issue during the execution.
+ */
+export const getAllInterviewExperience = async (req, res) => {
+    try {
+        const tasks = await interviewExperienceService.getAllInterviewExperience(); // call to service layer.
+
+        setResponse(tasks, res, 200)
+    } catch (err) {
+        console.log(err)
+        setError(err, res, 400)
+    }
+}
+
+/**
+ * Retrieves a specific interview experience by ID.
+ *
+ * @async
+ * @function
+ * @param {Object} req - Express request object containing parameters.
+ * @param {Object} res - Express response object.
+ * @returns {Promise&lt;void>} - A Promise representing the asynchronous operation.
+ * @throws {Object} - Error object if there's an issue during the execution.
+ */
+export const getInterviewExperience = async (req, res) => {
+    let statusCode;
+
+    try {
+        const task = await interviewExperienceService.getInterviewExperience(req.params.experienceId);
+        if (!task) {
+            statusCode = 404;
+            throw {"error": `task with id: ${req.params.experienceId} does not exist.`};
+        }
+
+        setResponse(task, res, 200)
+    } catch (err) {
+        setError(err, res, statusCode? statusCode : 400)
+    }
+}
+
+/**
+ * Creates a new interview experience for a user.
+ *
+ * @async
+ * @function
+ * @param {Object} req - Express request object containing parameters and body.
+ * @param {Object} res - Express response object.
+ * @returns {Promise&lt;void>} - A Promise representing the asynchronous operation.
+ * @throws {Object} - Error object if there's an issue during the execution, such as an invalid future date.
+ */
+export const createInterviewExperience = async (req, res) => {
+    try {
+        if(new Date(req.body.interviewedDate) > new Date()) {
+            throw {"error": `interviewedDate must be in the past!!!`};
+        }
+
+        const saveTask = await interviewExperienceService.createInterviewExperience(req.params.userId, {...req.body, id: uuidv4()});
+
+        setResponse(saveTask, res, 201)
+    } catch (err) {
+
+        console.log("create error: ", err)
+
+        setError(err, res, 400);
+    }
+}
+
+/**
+ * Updates an existing interview experience by ID.
+ *
+ * @async
+ * @function
+ * @param {Object} req - Express request object containing parameters and body.
+ * @param {Object} res - Express response object.
+ * @returns {Promise&lt;void>} - A Promise representing the asynchronous operation.
+ * @throws {Object} - Error object if there's an issue during the execution, such as an invalid future date or non-existent entity.
+ */
+export const updateInterviewExperience = async (req, res) => {
+    let statusCode;
+    try {
+
+        if(new Date(req.body.interviewedDate) > new Date()) {
+            throw {"error": `interviewedDate must be in the past!!!`};
+        }
+
+        const saveTask = await interviewExperienceService.updateInterviewExperience(req.params.experienceId, req.body);
+        if (!saveTask) {
+            statusCode = 404;
+            throw {"error": `Entity doesn't exist with task id: ${req.params.experienceId}` };
+        }
+
+        setResponse(saveTask, res, 200)
+    } catch (err) {
+        setError(err, res, statusCode? statusCode: 400)
+    }
+}
+
+/**
+ * Deletes an interview experience for a user by ID.
+ *
+ * @async
+ * @function
+ * @param {Object} req - Express request object containing parameters.
+ * @param {Object} res - Express response object.
+ * @returns {Promise&lt;void>} - A Promise representing the asynchronous operation.
+ * @throws {Object} - Error object if there's an issue during the execution, such as the entity not existing.
+ */
+export const deleteInterviewExperience = async (req, res) => {
+    let statusCode;
+    try {
+        const deleteTask = await interviewExperienceService.deleteInterviewExperience(req.params.userId, req.params.experienceId);
+        if (deleteTask.deletedCount === 0) {
+            statusCode = 404;
+            throw {"error": `task with id: ${req.params.experienceId} doesnt not exists.`};
+        }
+
+        setResponse(deleteTask, res, 204)
+    } catch (err) {
+        setError(err, res, statusCode? statusCode: 400)
+    }
+}
+
+/**
+ * Retrieves all comments for a specific interview experience.
+ *
+ * @async
+ * @function
+ * @param {Object} req - Express request object containing parameters.
+ * @param {Object} res - Express response object.
+ * @returns {Promise&lt;void>} - A Promise representing the asynchronous operation.
+ * @throws {Object} - Error object if there's an issue during the execution, such as a general error message.
+ */
+export const getAllInterviewExperienceComment = async(req, res) => {
+    try {
+        const allComments = await interviewExperienceService.getAllInterviewExperienceComment(req.params.experienceId);
+        
+        res.status(200).send(allComments)
+    } catch (error) {
+        res.status(400).send({"message": "Something went wrong!!"})
+    }
+}
+
+/**
+ * Creates a new comment for a specific interview experience.
+ *
+ * @async
+ * @function
+ * @param {Object} req - Express request object containing parameters and body.
+ * @param {Object} res - Express response object.
+ * @returns {Promise&lt;void>} - A Promise representing the asynchronous operation.
+ * @throws {Object} - Error object if there's an issue during the execution, such as a general error message.
+ */
+export const createInterviewExperienceComment = async (req, res) => {
+    try {   
+        const saveTask = await interviewExperienceService.createInterviewExperienceComment(req.params.experienceId, {...req.body, userId: req.params.userId, id: uuidv4()});
+        setResponse(saveTask, res, 201)
+    } catch (err) {
+
+        console.log("comment error: ", err)
+        setError(err, res, 400);
+    }
+}
+
+
+/**
+ * Updates a comment for a specific interview experience by experienceId and commentId.
+ *
+ * @async
+ * @function
+ * @param {Object} req - Express request object containing parameters and body.
+ * @param {Object} res - Express response object.
+ * @returns {Promise&lt;void>} - A Promise representing the asynchronous operation.
+ * @throws {Object} - Error object if there's an issue during the execution, such as a non-existent entity.
+ */
+export const updateInterviewExperienceComment = async (req, res) => {
+    let statusCode;
+    try {
+        const saveTask = await interviewExperienceService.updateInterviewExperienceComment(req.params.userId, req.params.experienceId, req.params.commentId, req.body.comment);
+        if (!saveTask) {
+            statusCode = 404;
+            throw {"error": `Entity doesn't exist with task id: ${req.params.commentId}` };
+        }
+
+        setResponse(saveTask, res, 200)
+    } catch (err) {
+        setError(err, res, statusCode? statusCode: 400)
+    }
+}
+
+/**
+ * Deletes a comment for a specific interview experience by experienceId and commentId.
+ *
+ * @async
+ * @function
+ * @param {Object} req - Express request object containing parameters.
+ * @param {Object} res - Express response object.
+ * @returns {Promise&lt;void>} - A Promise representing the asynchronous operation.
+ * @throws {Object} - Error object if there's an issue during the execution, such as a non-existent entity.
+ */
+export const deleteInterviewExperienceComment = async (req, res) => {
+    let statusCode;
+    try {
+
+        const deleteTask = await interviewExperienceService.deleteInterviewExperienceComment(req.params.userId, req.params.experienceId, req.params.commentId);
+        const comments = deleteTask ? deleteTask.comments.filter(comment => comment.id === req.params.commentId) : []
+        if (comments.length > 0) {
+            statusCode = 404;
+            throw {"error": `task with id: ${req.params.commentId} doesnt not exists.`};
+        }
+
+        setResponse(deleteTask, res, 204)
+    } catch (err) {
+        setError(err, res, statusCode? statusCode: 400)
+    }
+}
+
+/**
+ * Updates upvotes for a specific interview experience by experienceId.
+ *
+ * @async
+ * @function
+ * @param {Object} req - Express request object containing parameters and body.
+ * @param {Object} res - Express response object.
+ * @returns {Promise&lt;void>} - A Promise representing the asynchronous operation.
+ * @throws {Object} - Error object if there's an issue during the execution, such as a non-existent entity.
+ */
+export const upvotesInterviewExperience = async (req, res) => {
+    let statusCode;
+    try {
+        const saveTask = await interviewExperienceService.upvotesInterviewExperience(req.params.userId,req.params.experienceId, req.body.upvotes);
+        if (!saveTask) {
+            statusCode = 404;
+            throw {"error": `Entity doesn't exist with task id: ${req.params.experienceId}` };
+        }
+
+        setResponse(saveTask, res, 200)
+    } catch (err) {
+        setError(err, res, statusCode? statusCode: 400)
+    }
+}
+
+
+/**
+ * Sets the HTTP response status and JSON body for each request.
+ *
+ * @function
+ * @param {Object} obj - Object to be sent in the response body.
+ * @param {Object} responses - Express response object.
+ * @param {number} statusCode - HTTP status code to be set in the response.
+ */
+const setResponse = (obj, responses, statusCode) => {
+    responses.status(statusCode);
+    responses.json(obj);
+}
+
+/**
+ * Sets the HTTP response status and JSON body in case of failure for each request.
+ *
+ * @function
+ * @param {Object} err - Error object to be sent in the response body.
+ * @param {Object} responses - Express response object.
+ * @param {number} statusCode - HTTP status code to be set in the response.
+ */
+const setError = (err, responses, statusCode) => {
+    responses.status(statusCode);
+    responses.json(err);
+}</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Global</h3><ul><li><a href="global.html#AcceptMockInterviewRequest">AcceptMockInterviewRequest</a></li><li><a href="global.html#CreateCalendarEvent">CreateCalendarEvent</a></li><li><a href="global.html#DeleteCalenderEvent">DeleteCalenderEvent</a></li><li><a href="global.html#DeleteMockInterview">DeleteMockInterview</a></li><li><a href="global.html#GetMockInterviewByID">GetMockInterviewByID</a></li><li><a href="global.html#GetMockInterviewsAggregate">GetMockInterviewsAggregate</a></li><li><a href="global.html#GetMockInterviewsByFilter">GetMockInterviewsByFilter</a></li><li><a href="global.html#GetMockInterviewsTaken">GetMockInterviewsTaken</a></li><li><a href="global.html#GetUserEmailsById">GetUserEmailsById</a></li><li><a href="global.html#GetUserEvents">GetUserEvents</a></li><li><a href="global.html#ModifyAvailableSlot">ModifyAvailableSlot</a></li><li><a href="global.html#ModifyFeedback">ModifyFeedback</a></li><li><a href="global.html#ModifyMockInterview">ModifyMockInterview</a></li><li><a href="global.html#ModifySpecificFields">ModifySpecificFields</a></li><li><a href="global.html#RequestMockInterview">RequestMockInterview</a></li><li><a href="global.html#Schema">Schema</a></li><li><a href="global.html#UpdateCalendarEvent">UpdateCalendarEvent</a></li><li><a href="global.html#authenticateUser">authenticateUser</a></li><li><a href="global.html#bufferToStream">bufferToStream</a></li><li><a href="global.html#connectMongo">connectMongo</a></li><li><a href="global.html#createEventObj">createEventObj</a></li><li><a href="global.html#createInterviewExperience">createInterviewExperience</a></li><li><a href="global.html#createInterviewExperienceComment">createInterviewExperienceComment</a></li><li><a href="global.html#deleteInterviewExperience">deleteInterviewExperience</a></li><li><a href="global.html#deleteInterviewExperienceComment">deleteInterviewExperienceComment</a></li><li><a href="global.html#formatTimeStamp">formatTimeStamp</a></li><li><a href="global.html#generateToken">generateToken</a></li><li><a href="global.html#get">get</a></li><li><a href="global.html#getAllInterviewExperience">getAllInterviewExperience</a></li><li><a href="global.html#getAllInterviewExperienceComment">getAllInterviewExperienceComment</a></li><li><a href="global.html#getByEmail">getByEmail</a></li><li><a href="global.html#getById">getById</a></li><li><a href="global.html#getInterviewExperience">getInterviewExperience</a></li><li><a href="global.html#index">index</a></li><li><a href="global.html#passwordMatch">passwordMatch</a></li><li><a href="global.html#post">post</a></li><li><a href="global.html#remove">remove</a></li><li><a href="global.html#save">save</a></li><li><a href="global.html#schema">schema</a></li><li><a href="global.html#search">search</a></li><li><a href="global.html#sendUserVerficationEmail">sendUserVerficationEmail</a></li><li><a href="global.html#setError">setError</a></li><li><a href="global.html#setErrorResponse">setErrorResponse</a></li><li><a href="global.html#setResponse">setResponse</a></li><li><a href="global.html#setSuccessResponse">setSuccessResponse</a></li><li><a href="global.html#transporter">transporter</a></li><li><a href="global.html#update">update</a></li><li><a href="global.html#updateInterviewExperience">updateInterviewExperience</a></li><li><a href="global.html#updateInterviewExperienceComment">updateInterviewExperienceComment</a></li><li><a href="global.html#uploadModifiedFileToGoogleDrive">uploadModifiedFileToGoogleDrive</a></li><li><a href="global.html#uploadToGoogleDrive">uploadToGoogleDrive</a></li><li><a href="global.html#upvotesInterviewExperience">upvotesInterviewExperience</a></li><li><a href="global.html#userRegistration">userRegistration</a></li><li><a href="global.html#userVerfication">userVerfication</a></li><li><a href="global.html#validateId">validateId</a></li><li><a href="global.html#validatePayload">validatePayload</a></li><li><a href="global.html#validateUser">validateUser</a></li><li><a href="global.html#validationSchema">validationSchema</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.2</a> on Fri Dec 01 2023 20:22:54 GMT-0500 (Eastern Standard Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

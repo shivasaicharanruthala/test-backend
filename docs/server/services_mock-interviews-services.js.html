@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: services/mock-interviews-services.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: services/mock-interviews-services.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>// imports mock-interviews schema
+import MockInterview from "../models/mock-interviews.models.js";
+
+/**
+ * Fetches all the mock interviews specific to a user ID and optional status filter.
+ *
+ * @param {string} userId - The ID of the user for whom mock interviews are fetched.
+ * @param {object} filter - An optional filter object containing a "status" property.
+ * @param {string} filter.status - Optional status filter for mock interviews.
+ * @returns {Promise&lt;Array>} - A promise that resolves to an array of mock interviews.
+ */
+export const GetMockInterviewsByFilter = async (userId, filter) => {
+    let search = {}
+    if (filter &amp;&amp; filter.status) {
+        search["status"] = filter.status
+    }
+
+    search["userId"] = userId
+
+    return await GetMockInterviewsAggregate(search)
+}
+
+/**
+ * Fetches a mock interview by its ID for a specific user.
+ *
+ * @param {string} userId - The ID of the user for whom the mock interview is fetched.
+ * @param {string} mockInterviewId - The ID of the mock interview to be fetched.
+ * @returns {Promise&lt;object|null>} - A promise that resolves to the mock interview or null if not found.
+ */
+export const GetMockInterviewByID = async (userId, mockInterviewId) => {
+    return MockInterview.findOne({userID: userId, mockInterviewId: mockInterviewId}).exec();
+}
+
+/**
+ * Saves mock interview details requested in the database.
+ *
+ * @param {object} payload - The details of the mock interview to be saved.
+ * @returns {Promise&lt;object>} - A promise that resolves to the saved mock interview details.
+ */
+export const RequestMockInterview = async (payload) => {
+    const newMockInterview = new MockInterview(payload);
+
+    return newMockInterview.save();
+}
+
+/**
+ * Updates existing mock interview details for a specific interview ID.
+ *
+ * @param {string} mockInterviewId - The ID of the mock interview to be modified.
+ * @param {object} payload - The updated details for the mock interview.
+ * @returns {Promise&lt;object|null>} - A promise that resolves to the updated mock interview or null if not found.
+ */
+export const ModifyMockInterview = async (mockInterviewId, payload) => {
+    let updateMockInterview = {
+        "title": payload.title,
+        "description": payload.description,
+        "company": payload.company,
+        "role": payload.role,
+        "availableSlots": payload.availableSlots
+    };
+
+    return await MockInterview.findOneAndUpdate({"id": mockInterviewId}, updateMockInterview, {new: true}).exec();
+}
+
+/**
+ * Deletes an existing mock interview for a given interview ID.
+ *
+ * @param {string} id - The ID of the mock interview to be deleted.
+ * @returns {Promise&lt;object>} - A promise that resolves to the deletion result.
+ */
+export const DeleteMockInterview = async (id) => {
+    // TODO: validate user to be deleted.
+    return await MockInterview.deleteOne({"id": id}).exec();
+}
+
+/**
+ * Fetches all mock interviews based on a status filter or interviewedBy.
+ *
+ * @param {object} filter - An optional filter object containing "status" and "interviewedBy" properties.
+ * @param {string} filter.status - Optional status filter for mock interviews.
+ * @param {string} filter.interviewedBy - Optional user ID of the interviewer.
+ * @returns {Promise&lt;Array>} - A promise that resolves to an array of mock interviews.
+ */
+export const GetMockInterviewsTaken = async (filter) => {
+    let search = {}
+    if (filter &amp;&amp; filter.status &amp;&amp; filter.status === "REQUESTED") {
+        search["status"] = filter.status
+    } else {
+        if (filter &amp;&amp; filter.interviewedBy) {
+            search["interviewedBy"] = filter.interviewedBy
+        }
+
+        if (filter &amp;&amp; filter.status) {
+            search["status"] = filter.status
+        }
+    }
+
+    // aggregator to fetch user and interviewer details from user collection.
+    return await GetMockInterviewsAggregate(search)
+}
+
+/**
+ * Joins mock interview collection with user collection and projects required fields based on the given search criteria.
+ *
+ * @param {object} search - The search criteria to match mock interviews.
+ * @returns {Promise&lt;Array>} - A promise that resolves to an array of aggregated mock interviews.
+ */
+export const GetMockInterviewsAggregate = async (search) => {
+    return await MockInterview.aggregate([
+        {$match: {...search}},
+        {
+            $lookup: {
+                from: 'users',
+                localField: 'userId',
+                foreignField: 'id',
+                pipeline: [
+                    {$project: {"_id": 0, "id": 1, "firstName": 1}}
+                ],
+                as: 'user'
+            }
+        },
+        {
+            $lookup: {
+                from: 'users',
+                localField: 'interviewedBy',
+                foreignField: 'id',
+                pipeline: [
+                    {$project: {"_id": 0, "id": 1, "firstName": 1}}
+                ],
+                as: 'interviewer'
+            }
+        }
+    ]).exec()
+}
+
+/**
+ * Modifies specific fields of a document when a given mock interview ID is matched and returns the updated fields.
+ *
+ * @param {string} mockInterviewId - The ID of the mock interview document to be modified.
+ * @param {object} payload - The fields to be modified and their new values.
+ * @returns {Promise&lt;object|null>} - A promise that resolves to the updated mock interview fields or null if not found.
+ */
+export const ModifySpecificFields = async (mockInterviewId, payload) => {
+    return await MockInterview.findOneAndUpdate({id: mockInterviewId}, {"$set": {...payload}}, {new: true}).exec();
+}
+
+/**
+ * Modifies available slots of a document when a given mock interview ID and slot ID are matched and returns updated fields.
+ *
+ * @param {string} mockInterviewId - The ID of the mock interview document to be modified.
+ * @param {string} slotId - The ID of the available slot to be modified.
+ * @param {object} payload - The fields to be modified and their new values.
+ * @returns {Promise&lt;object|null>} - A promise that resolves to the updated mock interview fields or null if not found.
+ */
+export const ModifyAvailableSlot = async (mockInterviewId, slotId, payload) => {
+    return await MockInterview.findOneAndUpdate({id: mockInterviewId},
+        {
+            "$set": {
+                "interviewedBy": payload.interviewedBy,
+                "status": payload.status,
+                "availableSlots.$[outer].booked": true,
+            }
+        },
+        {
+            new: true,
+            arrayFilters: [
+                {"outer.id": slotId},
+            ]
+        }).exec()
+}
+
+/**
+ * Fetches all user events (mock interviews) with required status for a specific user ID.
+ *
+ * @param {string} userId - The ID of the user for whom events are fetched.
+ * @returns {Promise&lt;Array>} - A promise that resolves to an array of user events with required status.
+ */
+export const GetUserEvents = async (userId) => {
+    return await MockInterview.aggregate([
+        {
+            $match: {
+                $or: [{status: 'COMPLETED'}, {status: 'ACCEPTED'}], $and: [{
+                    $or: [
+                        {userId: userId},
+                        {interviewedBy: userId}
+                    ]
+                }]
+            }
+        },
+        {
+            $project: {
+                "_id": 0, "title": 1, "status": 1, "userId": 1,
+                "availableSlots": {
+                    $filter: {
+                        input: "$availableSlots",
+                        as: "slot",
+                        cond: {
+                            $eq: ["$$slot.booked", true]
+                        }
+                    }
+                }
+            }
+        },
+        {$unwind: "$availableSlots"},
+        {
+            $project: {
+                "title": 1, "status": 1,
+                "start": "$availableSlots.end",
+                "end": "$availableSlots.end",
+            }
+        },
+    ]).exec()
+}
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Global</h3><ul><li><a href="global.html#AcceptMockInterviewRequest">AcceptMockInterviewRequest</a></li><li><a href="global.html#CreateCalendarEvent">CreateCalendarEvent</a></li><li><a href="global.html#DeleteCalenderEvent">DeleteCalenderEvent</a></li><li><a href="global.html#DeleteMockInterview">DeleteMockInterview</a></li><li><a href="global.html#GetMockInterviewByID">GetMockInterviewByID</a></li><li><a href="global.html#GetMockInterviewsAggregate">GetMockInterviewsAggregate</a></li><li><a href="global.html#GetMockInterviewsByFilter">GetMockInterviewsByFilter</a></li><li><a href="global.html#GetMockInterviewsTaken">GetMockInterviewsTaken</a></li><li><a href="global.html#GetUserEmailsById">GetUserEmailsById</a></li><li><a href="global.html#GetUserEvents">GetUserEvents</a></li><li><a href="global.html#ModifyAvailableSlot">ModifyAvailableSlot</a></li><li><a href="global.html#ModifyFeedback">ModifyFeedback</a></li><li><a href="global.html#ModifyMockInterview">ModifyMockInterview</a></li><li><a href="global.html#ModifySpecificFields">ModifySpecificFields</a></li><li><a href="global.html#RequestMockInterview">RequestMockInterview</a></li><li><a href="global.html#Schema">Schema</a></li><li><a href="global.html#UpdateCalendarEvent">UpdateCalendarEvent</a></li><li><a href="global.html#authenticateUser">authenticateUser</a></li><li><a href="global.html#bufferToStream">bufferToStream</a></li><li><a href="global.html#connectMongo">connectMongo</a></li><li><a href="global.html#createEventObj">createEventObj</a></li><li><a href="global.html#createInterviewExperience">createInterviewExperience</a></li><li><a href="global.html#createInterviewExperienceComment">createInterviewExperienceComment</a></li><li><a href="global.html#deleteInterviewExperience">deleteInterviewExperience</a></li><li><a href="global.html#deleteInterviewExperienceComment">deleteInterviewExperienceComment</a></li><li><a href="global.html#formatTimeStamp">formatTimeStamp</a></li><li><a href="global.html#generateToken">generateToken</a></li><li><a href="global.html#get">get</a></li><li><a href="global.html#getAllInterviewExperience">getAllInterviewExperience</a></li><li><a href="global.html#getAllInterviewExperienceComment">getAllInterviewExperienceComment</a></li><li><a href="global.html#getByEmail">getByEmail</a></li><li><a href="global.html#getById">getById</a></li><li><a href="global.html#getInterviewExperience">getInterviewExperience</a></li><li><a href="global.html#index">index</a></li><li><a href="global.html#passwordMatch">passwordMatch</a></li><li><a href="global.html#post">post</a></li><li><a href="global.html#remove">remove</a></li><li><a href="global.html#save">save</a></li><li><a href="global.html#schema">schema</a></li><li><a href="global.html#search">search</a></li><li><a href="global.html#sendUserVerficationEmail">sendUserVerficationEmail</a></li><li><a href="global.html#setError">setError</a></li><li><a href="global.html#setErrorResponse">setErrorResponse</a></li><li><a href="global.html#setResponse">setResponse</a></li><li><a href="global.html#setSuccessResponse">setSuccessResponse</a></li><li><a href="global.html#transporter">transporter</a></li><li><a href="global.html#update">update</a></li><li><a href="global.html#updateInterviewExperience">updateInterviewExperience</a></li><li><a href="global.html#updateInterviewExperienceComment">updateInterviewExperienceComment</a></li><li><a href="global.html#uploadModifiedFileToGoogleDrive">uploadModifiedFileToGoogleDrive</a></li><li><a href="global.html#uploadToGoogleDrive">uploadToGoogleDrive</a></li><li><a href="global.html#upvotesInterviewExperience">upvotesInterviewExperience</a></li><li><a href="global.html#userRegistration">userRegistration</a></li><li><a href="global.html#userVerfication">userVerfication</a></li><li><a href="global.html#validateId">validateId</a></li><li><a href="global.html#validatePayload">validatePayload</a></li><li><a href="global.html#validateUser">validateUser</a></li><li><a href="global.html#validationSchema">validationSchema</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.2</a> on Fri Dec 01 2023 20:22:54 GMT-0500 (Eastern Standard Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

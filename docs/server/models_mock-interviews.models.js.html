@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: models/mock-interviews.models.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: models/mock-interviews.models.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>import mongoose from 'mongoose';
+
+/**
+ * Mongoose schema for available slots in a mock interview.
+ *
+ * @typedef {Object} AvailableSlotsSchema
+ * @property {String} id - Unique identifier for the available slot.
+ * @property {Date} start - Start time of the available slot.
+ * @property {Date} end - End time of the available slot.
+ * @property {Boolean} booked - Indicates if the slot is booked or not.
+ */
+
+/**
+ * Mongoose schema for mock interviews.
+ *
+ * @typedef {Object} MockInterviewSchema
+ * @property {String} id - Unique identifier for the mock interview.
+ * @property {String} userId - User ID associated with the mock interview.
+ * @property {String} interviewedBy - User ID of the interviewer (optional).
+ * @property {String} title - Title of the mock interview.
+ * @property {String} company - Company associated with the mock interview.
+ * @property {String} role - Role for which the mock interview is conducted.
+ * @property {String} description - Description of the mock interview.
+ * @property {String} resume - ID or link to the resume associated with the interviewee.
+ * @property {AvailableSlotsSchema[]} availableSlots - Array of available slots for the mock interview.
+ * @property {String} status - Status of the mock interview (REQUESTED, INACTIVE, ACCEPTED, COMPLETED).
+ * @property {String} feedback - Feedback for the mock interview (optional).
+ * @property {Date} feedbackAt - Timestamp for when feedback is provided (optional).
+ * @property {String} eventId - ID associated with the Google Calendar event (optional).
+ * @property {Object} timestamps - Auto-generated timestamps for 'createdAt' and 'updatedAt'.
+ */
+
+/**
+ * Mongoose schema definition for mock interview documents.
+ *
+ * @type {mongoose.Schema}
+ */
+const AvailableSlotsSchema = new mongoose.Schema({
+    id: {
+      type: String,
+        unique: true,
+        required: 'id field is required'
+    },
+    start: {
+        type: Date,
+        required: 'start time field is required'
+    },
+    end: {
+        type: Date,
+        required: 'end time field is required'
+    },
+    booked: {
+        type: Boolean,
+        default: false
+    }
+})
+
+// mongoose schema for mock-interviews
+const schema = new mongoose.Schema({
+    id: {
+        type: String,
+        unique: true,
+        required: 'id field is required'
+    },
+    userId: {
+        type: String,
+        required: 'userId field is required'
+    },
+    interviewedBy: {
+        type: String,
+    },
+    title: {
+        type: String,
+        required: 'title field is required'
+    },
+    company: {
+        type: String,
+        required: 'company field is required'
+    },
+    role: {
+        type: String,
+        required: 'role field is required'
+    },
+    description: {
+        type: String,
+        required: 'description field is required'
+    },
+    resume: {
+        type: String,
+        required: 'resume field is required'
+    },
+    availableSlots: {
+        type: [AvailableSlotsSchema],
+        required: 'availableSlots field is required'
+    },
+    status: {
+        type: String,
+        default: 'REQUESTED',
+        enum : ['REQUESTED', 'INACTIVE', 'ACCEPTED', 'COMPLETED'],
+        required: 'status field is required'
+    },
+    feedback: {
+        type: String,
+    },
+    feedbackAt: {
+        type: Date,
+    },
+    eventId: {
+        type: String,
+    }
+}, {timestamps: true})
+
+
+const model = mongoose.model('mockinterviews', schema);
+
+export default model; // export mock-interviews schema.
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Global</h3><ul><li><a href="global.html#AcceptMockInterviewRequest">AcceptMockInterviewRequest</a></li><li><a href="global.html#CreateCalendarEvent">CreateCalendarEvent</a></li><li><a href="global.html#DeleteCalenderEvent">DeleteCalenderEvent</a></li><li><a href="global.html#DeleteMockInterview">DeleteMockInterview</a></li><li><a href="global.html#GetMockInterviewByID">GetMockInterviewByID</a></li><li><a href="global.html#GetMockInterviewsAggregate">GetMockInterviewsAggregate</a></li><li><a href="global.html#GetMockInterviewsByFilter">GetMockInterviewsByFilter</a></li><li><a href="global.html#GetMockInterviewsTaken">GetMockInterviewsTaken</a></li><li><a href="global.html#GetUserEmailsById">GetUserEmailsById</a></li><li><a href="global.html#GetUserEvents">GetUserEvents</a></li><li><a href="global.html#ModifyAvailableSlot">ModifyAvailableSlot</a></li><li><a href="global.html#ModifyFeedback">ModifyFeedback</a></li><li><a href="global.html#ModifyMockInterview">ModifyMockInterview</a></li><li><a href="global.html#ModifySpecificFields">ModifySpecificFields</a></li><li><a href="global.html#RequestMockInterview">RequestMockInterview</a></li><li><a href="global.html#Schema">Schema</a></li><li><a href="global.html#UpdateCalendarEvent">UpdateCalendarEvent</a></li><li><a href="global.html#authenticateUser">authenticateUser</a></li><li><a href="global.html#bufferToStream">bufferToStream</a></li><li><a href="global.html#connectMongo">connectMongo</a></li><li><a href="global.html#createEventObj">createEventObj</a></li><li><a href="global.html#createInterviewExperience">createInterviewExperience</a></li><li><a href="global.html#createInterviewExperienceComment">createInterviewExperienceComment</a></li><li><a href="global.html#deleteInterviewExperience">deleteInterviewExperience</a></li><li><a href="global.html#deleteInterviewExperienceComment">deleteInterviewExperienceComment</a></li><li><a href="global.html#formatTimeStamp">formatTimeStamp</a></li><li><a href="global.html#generateToken">generateToken</a></li><li><a href="global.html#get">get</a></li><li><a href="global.html#getAllInterviewExperience">getAllInterviewExperience</a></li><li><a href="global.html#getAllInterviewExperienceComment">getAllInterviewExperienceComment</a></li><li><a href="global.html#getByEmail">getByEmail</a></li><li><a href="global.html#getById">getById</a></li><li><a href="global.html#getInterviewExperience">getInterviewExperience</a></li><li><a href="global.html#index">index</a></li><li><a href="global.html#passwordMatch">passwordMatch</a></li><li><a href="global.html#post">post</a></li><li><a href="global.html#remove">remove</a></li><li><a href="global.html#save">save</a></li><li><a href="global.html#schema">schema</a></li><li><a href="global.html#search">search</a></li><li><a href="global.html#sendUserVerficationEmail">sendUserVerficationEmail</a></li><li><a href="global.html#setError">setError</a></li><li><a href="global.html#setErrorResponse">setErrorResponse</a></li><li><a href="global.html#setResponse">setResponse</a></li><li><a href="global.html#setSuccessResponse">setSuccessResponse</a></li><li><a href="global.html#transporter">transporter</a></li><li><a href="global.html#update">update</a></li><li><a href="global.html#updateInterviewExperience">updateInterviewExperience</a></li><li><a href="global.html#updateInterviewExperienceComment">updateInterviewExperienceComment</a></li><li><a href="global.html#uploadModifiedFileToGoogleDrive">uploadModifiedFileToGoogleDrive</a></li><li><a href="global.html#uploadToGoogleDrive">uploadToGoogleDrive</a></li><li><a href="global.html#upvotesInterviewExperience">upvotesInterviewExperience</a></li><li><a href="global.html#userRegistration">userRegistration</a></li><li><a href="global.html#userVerfication">userVerfication</a></li><li><a href="global.html#validateId">validateId</a></li><li><a href="global.html#validatePayload">validatePayload</a></li><li><a href="global.html#validateUser">validateUser</a></li><li><a href="global.html#validationSchema">validationSchema</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.2</a> on Fri Dec 01 2023 20:22:54 GMT-0500 (Eastern Standard Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>
